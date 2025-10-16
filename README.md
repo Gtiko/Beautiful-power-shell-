@@ -29,7 +29,11 @@ This script customizes your PowerShell prompt with **Powerline-style segments**,
 
    Open your PowerShell profile:
    ```powershell
-   notepad $PROFILE // code $profile
+   notepad $PROFILE
+   ```
+   or
+   ```powershell
+   code $profile
 
-3. copy the file from the powershellfile to $profile
+3. copy the file from the powerShellFile to $profile
   
