@@ -1,0 +1,76 @@
+function Get-GitStatusInfo {
+    $gitDir = git rev-parse --git-dir 2>$null
+    if (-not $gitDir) { return $null }
+
+    $branch = git rev-parse --abbrev-ref HEAD 2>$null
+    if ($LASTEXITCODE -ne 0) { return $null }
+
+    if ($branch -eq "HEAD") {
+        $branch = git rev-parse --short HEAD 2>$null
+        return @{ Branch = $branch; IsDetached = $true }
+    }
+
+    return @{ Branch = $branch; IsDetached = $false }
+}
+
+function prompt {
+    # --- Powerline symbols ---
+    $leftEdge = [char]0xe0b6   #  left rounded edge
+    $sep = [char]0xe0b0        #  separator
+    $rightEdge = [char]0xe0b4  #  right rounded edge
+
+    # --- Icons ---
+    $folderIcon = [char]0xea83  #  folder
+    $gitHubIcon = [char]0xf09b  #  GitHub
+    $branchIcon = [char]0xe0a0  #  branch
+    $menuIcon = [char]0x2261    # ≡ menu
+    $checkIcon = [char]0xf00c   #  check
+
+    # --- Colors ---
+    $bgUser = "Magenta"
+    $bgPath = "Yellow"
+    $bgGit = "Green"
+    $bgEnd = "DarkBlue"
+    $fgText = "Black"
+    $fgEnd = "White"
+
+    # --- Dynamic Info ---
+    $userName = $env:USERNAME
+    $location = Split-Path -Leaf (Get-Location)
+    $fullPath = (Get-Location).Path
+    $branch = git branch --show-current 2>$null
+
+    # --- ANSI clickable underline ---
+    $esc = [char]27
+    $underlineOn = "${esc}[4m"
+    $underlineOff = "${esc}[24m"
+    $hoverLink = "${esc}]8;;file:///$fullPath${esc}\"
+    $hoverEnd = "${esc}]8;;${esc}\"
+    $pathDisplay = "$hoverLink$underlineOn$location$underlineOff$hoverEnd"
+
+    # --- Build Smooth Segments ---
+    # User segment start
+    Write-Host "$leftEdge" -NoNewline -ForegroundColor $bgUser
+    Write-Host " $userName " -NoNewline -ForegroundColor $fgText -BackgroundColor $bgUser
+
+    # Transition to Path
+    Write-Host "$sep" -NoNewline -ForegroundColor $bgUser -BackgroundColor $bgPath
+    Write-Host " $folderIcon $pathDisplay " -NoNewline -ForegroundColor $fgText -BackgroundColor $bgPath
+
+    # If Git branch exists, show Git segment
+    if ($branch) {
+        Write-Host "$sep" -NoNewline -ForegroundColor $bgPath -BackgroundColor $bgGit
+        Write-Host " $gitHubIcon $branchIcon $branch $menuIcon " -NoNewline -ForegroundColor $fgText -BackgroundColor $bgGit
+        Write-Host "$sep" -NoNewline -ForegroundColor $bgGit -BackgroundColor $bgEnd
+    }
+    else {
+        # No Git: keep smooth transition from Path → End using path color
+        Write-Host "$sep" -NoNewline -ForegroundColor $bgPath -BackgroundColor $bgEnd
+    }
+
+    # Final check and edge
+    Write-Host " $checkIcon " -NoNewline -ForegroundColor $fgEnd -BackgroundColor $bgEnd
+    Write-Host "$rightEdge" -NoNewline -ForegroundColor $bgEnd
+
+    return " "
+}
